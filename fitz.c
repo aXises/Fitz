@@ -8,11 +8,13 @@
 
 // Function prototypes.
 void new_game();
-void play_game();
-void draw_board();
+void play_game(int row, int col);
+void draw_board(char **board, int row, int col);
 void request_input(char *response);
 int validate_input(char **args);
 char **split(char* string, char *character);
+char **generate_board(int row, int col);
+char **read_tile(char *fileName);
 
 int main(int argc, char **argv) {
     new_game();
@@ -20,12 +22,14 @@ int main(int argc, char **argv) {
 }
 
 void new_game() {
-    play_game();
+    play_game(5, 4);
 }
 
-void play_game() {
+void play_game(int row, int col) {
     int gameEnded = 0;
-    draw_board();
+    char **board = generate_board(row, col);
+    // draw_board(board, row, col);
+    read_tile("testtiles");
     while (!gameEnded) {
         char response[MAX_INPUT];
         char **args;
@@ -51,15 +55,16 @@ void play_game() {
         printf("loop complete\n");
         gameEnded = 1;  
     }
-
+    for (int i = 0; i < col; i++) {
+        free(board[i]);
+    }
+    free(board);
 }
 
-void draw_board() {
-    int height = 5;
-    int width = 5;
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            printf(".");
+void draw_board(char **board, int row, int col) {
+    for (int i = 0; i < col; i++) {
+        for (int j = 0; j < row; j++) {
+            printf("%c", board[i][j]);
         }
         printf("\n");
     }
@@ -109,4 +114,42 @@ char **split(char *string, char *character) {
         counter++;
     }
     return array;
+}
+
+char **generate_board(int row, int col) {
+    char **grid = malloc(sizeof(char *) * col);
+    for (int i = 0; i < col; i++) {
+        grid[i] = malloc(sizeof(char) * row);
+        for (int j = 0; j < row; j++) {
+            grid[i][j] = '.';
+        }
+    }
+    return grid;
+}
+
+char **read_tile(char *fileName) {
+    FILE *file = fopen(fileName, "r");
+    int character;
+    int row = 0, col = 0;
+    if (file) {
+        while ((character = getc(file)) != EOF) {
+            if (character != '\n' && character != ',' && character != '!') {
+                return NULL;
+            }
+            if (row != 5 && row != 0 && character == '\n') {
+                return NULL;
+            }
+            if (character == '\n') {
+                if (row == 5) {
+                    col = 0;
+                }
+                row = 0;
+                col++;
+            } else {
+                row++;
+            }
+        }
+        fclose(file);
+    }
+    return NULL;
 }
