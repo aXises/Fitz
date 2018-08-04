@@ -7,8 +7,7 @@
 #define MAX_INPUT 70
 
 // Function prototypes.
-void new_game();
-void play_game(int row, int col);
+void play_game(char ***tiles, int row, int col);
 void draw_board(char **board, int row, int col);
 void request_input(char *response);
 int validate_input(char **args);
@@ -20,45 +19,65 @@ void transpose(char **tile);
 void reverse(char **tile);
 void rotate_tile(char **tile, int step);
 void display_tileset(char **tile);
-void display_tile(char **tile);
 
 int main(int argc, char **argv) {
     if (argc == 1 || argc > 6) {
         fprintf(stderr, "Usage: fitz tilefile [p1type p2type " \
             "[height width | filename]]\n");
+        return 1;
     }
-    if (argc == 2) {
-        int tileAmount, errorCode = 0;
-        char ***tiles = read_tile(argv[1], &tileAmount, &errorCode);
-        if (errorCode == 0) {
-            for (int i = 0; i < tileAmount; i++) {
-                display_tileset(tiles[i]);
-                if (i != tileAmount - 1) {
-                    printf("\n");
-                } 
-            }
+    char ***tiles;
+    int tileAmount;
+    int errorCode = 0;
+    tiles = read_tile(argv[1], &tileAmount, &errorCode);
+    if (errorCode == 0 && argc == 2) {
+        for (int i = 0; i < tileAmount; i++) {
+            display_tileset(tiles[i]);
+            if (i != tileAmount - 1) {
+                printf("\n");
+            } 
+        }
+    } else if (errorCode > 0) {
+        if (errorCode == 2) {
+            fprintf(stderr, "Can’t access tile file\n");
+        }
+        if (errorCode == 3) {
+            fprintf(stderr, "Invalid tile file contents\n");
         }
         return errorCode;
     }
-    // new_game();
+    if (argc == 6) {
+        if (!(strcmp(argv[2], "h") == 0 || strcmp(argv[2], "p") == 0)
+                || !(strcmp(argv[3], "h") == 0 ||
+                strcmp(argv[3], "p") == 0)) {
+            fprintf(stderr, "Invalid player type\n");
+            return 4;
+        }
+        if (!isdigit(*argv[4]) || !isdigit(*argv[5])) {
+            fprintf(stderr, "Invalid dimensions\n");
+            return 5;
+        }
+        if (atoi(argv[4]) < 1 || atoi(argv[4]) > 999 ||
+                    atoi(argv[5]) < 1 || atoi(argv[5]) > 999 ) {
+            fprintf(stderr, "Invalid dimensions\n");
+            return 5;             
+        }
+        play_game(tiles, atoi(argv[5]), atoi(argv[4]));
+    }
+    for (int i = 0; i < tileAmount; i++) {
+        for (int j = 0; j < 5; j++) {
+            free(tiles[i][j]);
+        }
+        free(tiles[i]);
+    }
+    free(tiles);
     return 0;
 }
 
-void new_game() {
-    play_game(5, 4);
-}
-
-void play_game(int row, int col) {
+void play_game(char ***tiles, int row, int col) {
     int gameEnded = 0;
     char **board = generate_board(row, col);
-    // draw_board(board, row, col);
-    int tileAmount, errorCode = 0;
-    char ***tiles = read_tile("testtiles", &tileAmount, &errorCode);
-    if (tiles == NULL) {
-        printf("tilefile error %i\n", errorCode);
-        exit(errorCode);
-        return;
-    }
+    draw_board(board, row, col);
     while (!gameEnded) {
         char response[MAX_INPUT];
         char **args;
@@ -88,13 +107,6 @@ void play_game(int row, int col) {
         free(board[i]);
     }
     free(board);
-    for (int i = 0; i < tileAmount; i++) {
-        for (int j = 0; j < 5; j++) {
-            free(tiles[i][j]);
-        }
-        free(tiles[i]);
-    }
-    free(tiles);
 }
 
 void draw_board(char **board, int row, int col) {
@@ -253,8 +265,4 @@ void display_tileset(char **tile) {
         }
         printf("\n");
     }
-}
-
-void display_tile(char **tile) {
-    
 }
