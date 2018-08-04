@@ -6,9 +6,16 @@
 // Constants
 #define MAX_INPUT 70
 
+// Type definations.
+typedef struct Board {
+    char **grid;
+    int row;
+    int col;
+} Board;
+
 // Function prototypes.
 void play_game(char ***tiles, int row, int col);
-void draw_board(char **board, int row, int col);
+void draw_board(struct Board board);
 void request_input(char *response);
 int validate_input(char **args);
 char **split(char* string, char *character);
@@ -19,6 +26,9 @@ void transpose(char **tile);
 void reverse(char **tile);
 void rotate_tile(char **tile, int step);
 void display_tileset(char **tile);
+void place_tile(Board board, char **tile, int row, int col,
+        int rotation);
+void display_tile(char **tile);
 
 int main(int argc, char **argv) {
     if (argc == 1 || argc > 6) {
@@ -76,8 +86,13 @@ int main(int argc, char **argv) {
 
 void play_game(char ***tiles, int row, int col) {
     int gameEnded = 0;
-    char **board = generate_board(row, col);
-    draw_board(board, row, col);
+    Board board;
+    board.grid = generate_board(row, col);
+    board.row = row;
+    board.col = col;
+    display_tile(tiles[0]);
+    printf("\n");
+    draw_board(board);
     while (!gameEnded) {
         char response[MAX_INPUT];
         char **args;
@@ -88,6 +103,8 @@ void play_game(char ***tiles, int row, int col) {
             }
             args = split(response, " ");
             if (validate_input(args)) {
+                // place_tile(board, tiles[0], atoi(args[0]), atoi(args[1]),
+                //         atoi(args[2]));
                 break;
             } else {
                 for (int i = 0; i < MAX_INPUT; i++) {
@@ -104,15 +121,15 @@ void play_game(char ***tiles, int row, int col) {
         gameEnded = 1;  
     }
     for (int i = 0; i < col; i++) {
-        free(board[i]);
+        free(board.grid[i]);
     }
-    free(board);
+    free(board.grid);
 }
 
-void draw_board(char **board, int row, int col) {
-    for (int i = 0; i < col; i++) {
-        for (int j = 0; j < row; j++) {
-            printf("%c", board[i][j]);
+void draw_board(Board board) {
+    for (int i = 0; i < board.col; i++) {
+        for (int j = 0; j < board.row; j++) {
+            printf("%c", board.grid[i][j]);
         }
         printf("\n");
     }
@@ -265,4 +282,18 @@ void display_tileset(char **tile) {
         }
         printf("\n");
     }
+}
+
+void display_tile(char **tile) {
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+            printf("%c", tile[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+void place_tile(Board board, char **tile, int row, int col, int rotation) {
+    printf("placing at %i %i", row, col);
+    display_tile(tile);
 }
