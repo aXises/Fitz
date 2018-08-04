@@ -35,6 +35,7 @@ void play_game(int row, int col) {
         printf("tilefile error\n"); // Handle later
         return;
     }
+    // rotate_tile(&tiles[0], 1);
     printf("\n");
     for (int i = 0; i < tileAmount; i++) {
         for (int j = 0; j < 5; j++) {
@@ -74,6 +75,13 @@ void play_game(int row, int col) {
         free(board[i]);
     }
     free(board);
+    for (int i = 0; i < tileAmount; i++) {
+        for (int j = 0; j < 5; j++) {
+            free(tiles[i][j]);
+        }
+        free(tiles[i]);
+    }
+    free(tiles);
 }
 
 void draw_board(char **board, int row, int col) {
