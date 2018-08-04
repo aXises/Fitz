@@ -15,6 +15,11 @@ int validate_input(char **args);
 char **split(char* string, char *character);
 char **generate_board(int row, int col);
 char ***read_tile(char *fileName, int *tileAmount);
+void swap(char *elemA, char *elemB);
+void transpose(char **tile);
+void reverse(char **tile);
+void rotate_tile(char **tile, int step);
+void display_tileset();
 
 int main(int argc, char **argv) {
     new_game();
@@ -35,17 +40,17 @@ void play_game(int row, int col) {
         printf("tilefile error\n"); // Handle later
         return;
     }
-    // rotate_tile(&tiles[0], 1);
-    printf("\n");
-    for (int i = 0; i < tileAmount; i++) {
-        for (int j = 0; j < 5; j++) {
-            for (int k = 0; k < 5; k++) {
-                printf("%c", tiles[i][j][k]);
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
+    rotate_tile(tiles[0], 1);
+    // printf("\n");
+    // for (int i = 0; i < tileAmount; i++) {
+    //     for (int j = 0; j < 5; j++) {
+    //         for (int k = 0; k < 5; k++) {
+    //             printf("%c", tiles[i][j][k]);
+    //         }
+    //         printf("\n");
+    //     }
+    //     printf("\n");
+    // }
     while (!gameEnded) {
         char response[MAX_INPUT];
         char **args;
@@ -165,7 +170,6 @@ char ***read_tile(char *fileName, int *tileAmount) {
                     && character != '!') {
                 return NULL;
             }
-            printf("%i %i %c - ", row, col, character);
             if (((row == 5 && col == 4) || (row == 0 && col == -1))
                     && character != '\n') {
                 return NULL;
@@ -196,3 +200,34 @@ char ***read_tile(char *fileName, int *tileAmount) {
     *tileAmount = size + 1;
     return tiles;
 }
+
+void swap(char *elemA, char *elemB) {
+    char temp;
+    temp = *elemB;
+    *elemB = *elemA;
+    *elemA = temp;
+}
+
+void transpose(char **tile) {
+    for (int i = 0; i < 5; i++) {
+        for (int j = i; j < 5; j++) {
+            swap(&tile[i][j], &tile[j][i]);
+        }
+    }
+}
+
+void reverse(char **tile) {
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 3; j++) {
+            swap(&tile[i][j], &tile[i][4 - j]);
+        }
+    }
+}
+
+void rotate_tile(char **tile, int step) {
+    for (int i = 0; i < step; i++) {
+        transpose(tile);
+        reverse(tile);
+    }
+}
+
