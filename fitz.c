@@ -14,7 +14,7 @@ void request_input(char *response);
 int validate_input(char **args);
 char **split(char* string, char *character);
 char **generate_board(int row, int col);
-char **read_tile(char *fileName);
+char ***read_tile(char *fileName, int *tileAmount);
 
 int main(int argc, char **argv) {
     new_game();
@@ -29,7 +29,22 @@ void play_game(int row, int col) {
     int gameEnded = 0;
     char **board = generate_board(row, col);
     // draw_board(board, row, col);
-    read_tile("testtiles");
+    int tileAmount;
+    char ***tiles = read_tile("testtiles", &tileAmount);
+    if (tiles == NULL) {
+        printf("tilefile error\n"); // Handle later
+        return;
+    }
+    printf("\n");
+    for (int i = 0; i < tileAmount; i++) {
+        for (int j = 0; j < 5; j++) {
+            for (int k = 0; k < 5; k++) {
+                printf("%c", tiles[i][j][k]);
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
     while (!gameEnded) {
         char response[MAX_INPUT];
         char **args;
@@ -127,10 +142,16 @@ char **generate_board(int row, int col) {
     return grid;
 }
 
-char **read_tile(char *fileName) {
+char ***read_tile(char *fileName, int *tileAmount) {
+    
     FILE *file = fopen(fileName, "r");
-    int character;
-    int row = 0, col = 0;
+    char character;
+    int row = 0, col = 0, size = 0;
+    char ***tiles = malloc(sizeof(char **));
+    tiles[size] = malloc(sizeof(char *) * 5);
+    for (int i = 0; i < 5; i++) {
+        tiles[size][i] = malloc(sizeof(char) * 5);
+    }   
     if (file) {
         while ((character = getc(file)) != EOF) {
             if (character != '\n' && character != ',' && character != '!') {
@@ -140,16 +161,27 @@ char **read_tile(char *fileName) {
                 return NULL;
             }
             if (character == '\n') {
-                if (row == 5) {
-                    col = 0;
+                col++;
+                if (col == 5) {
+                    size++;
+                    tiles = realloc(tiles, sizeof(char **) * (size + 1));
+                    tiles[size] = malloc(sizeof(char *) * 5);
+                    for (int i = 0; i < 5; i++) {
+                        tiles[size][i] = malloc(sizeof(char) * 5);
+                    }  
+                    col = -1;
                 }
                 row = 0;
-                col++;
             } else {
+                tiles[size][col][row] = character;
                 row++;
             }
+
         }
         fclose(file);
+    } else {
+        return NULL;
     }
-    return NULL;
+    *tileAmount = size + 1;
+    return tiles;
 }
