@@ -143,7 +143,6 @@ char **generate_board(int row, int col) {
 }
 
 char ***read_tile(char *fileName, int *tileAmount) {
-    
     FILE *file = fopen(fileName, "r");
     char character;
     int row = 0, col = 0, size = 0;
@@ -154,17 +153,21 @@ char ***read_tile(char *fileName, int *tileAmount) {
     }   
     if (file) {
         while ((character = getc(file)) != EOF) {
-            if (character != '\n' && character != ',' && character != '!') {
+            if (character != '\n' && character != ','
+                    && character != '!') {
                 return NULL;
             }
-            if (row != 5 && row != 0 && character == '\n') {
+            printf("%i %i %c - ", row, col, character);
+            if (((row == 5 && col == 4) || (row == 0 && col == -1))
+                    && character != '\n') {
                 return NULL;
             }
             if (character == '\n') {
                 col++;
                 if (col == 5) {
                     size++;
-                    tiles = realloc(tiles, sizeof(char **) * (size + 1));
+                    tiles = realloc(tiles,
+                            sizeof(char **) * (size + 1));
                     tiles[size] = malloc(sizeof(char *) * 5);
                     for (int i = 0; i < 5; i++) {
                         tiles[size][i] = malloc(sizeof(char) * 5);
