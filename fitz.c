@@ -7,7 +7,7 @@
 #define MAX_INPUT 70
 
 // Type definations.
-typedef struct Board {
+typedef struct {
     char **grid;
     int row;
     int col;
@@ -15,7 +15,7 @@ typedef struct Board {
 
 // Function prototypes.
 void play_game(char ***tiles, int row, int col);
-void draw_board(struct Board board);
+void draw_board(Board board);
 void request_input(char *response);
 int validate_input(char **args);
 char **split(char* string, char *character);
@@ -26,8 +26,7 @@ void transpose(char **tile);
 void reverse(char **tile);
 void rotate_tile(char **tile, int step);
 void display_tileset(char **tile);
-void place_tile(Board board, char **tile, int row, int col,
-        int rotation);
+void place_tile(Board board, char **tile, int x, int y, int angle);
 void display_tile(char **tile);
 
 int main(int argc, char **argv) {
@@ -293,7 +292,7 @@ void display_tile(char **tile) {
     }
 }
 
-void place_tile(Board board, char **tile, int row, int col, int rotation) {
-    printf("placing at %i %i", row, col);
+void place_tile(Board board, char **tile, int x, int y, int angle) {
+    printf("placing at %i %i\n", x, y);
     display_tile(tile);
 }
