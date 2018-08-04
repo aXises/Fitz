@@ -14,15 +14,33 @@ void request_input(char *response);
 int validate_input(char **args);
 char **split(char* string, char *character);
 char **generate_board(int row, int col);
-char ***read_tile(char *fileName, int *tileAmount);
+char ***read_tile(char *fileName, int *tileAmount, int *error);
 void swap(char *elemA, char *elemB);
 void transpose(char **tile);
 void reverse(char **tile);
 void rotate_tile(char **tile, int step);
-void display_tileset();
+void display_tileset(char **tile);
+void display_tile(char **tile);
 
 int main(int argc, char **argv) {
-    new_game();
+    if (argc == 1 || argc > 6) {
+        fprintf(stderr, "Usage: fitz tilefile [p1type p2type " \
+            "[height width | filename]]\n");
+    }
+    if (argc == 2) {
+        int tileAmount, errorCode = 0;
+        char ***tiles = read_tile(argv[1], &tileAmount, &errorCode);
+        if (errorCode == 0) {
+            for (int i = 0; i < tileAmount; i++) {
+                display_tileset(tiles[i]);
+                if (i != tileAmount - 1) {
+                    printf("\n");
+                } 
+            }
+        }
+        return errorCode;
+    }
+    // new_game();
     return 0;
 }
 
@@ -34,23 +52,13 @@ void play_game(int row, int col) {
     int gameEnded = 0;
     char **board = generate_board(row, col);
     // draw_board(board, row, col);
-    int tileAmount;
-    char ***tiles = read_tile("testtiles", &tileAmount);
+    int tileAmount, errorCode = 0;
+    char ***tiles = read_tile("testtiles", &tileAmount, &errorCode);
     if (tiles == NULL) {
-        printf("tilefile error\n"); // Handle later
+        printf("tilefile error %i\n", errorCode);
+        exit(errorCode);
         return;
     }
-    rotate_tile(tiles[0], 1);
-    // printf("\n");
-    // for (int i = 0; i < tileAmount; i++) {
-    //     for (int j = 0; j < 5; j++) {
-    //         for (int k = 0; k < 5; k++) {
-    //             printf("%c", tiles[i][j][k]);
-    //         }
-    //         printf("\n");
-    //     }
-    //     printf("\n");
-    // }
     while (!gameEnded) {
         char response[MAX_INPUT];
         char **args;
@@ -155,7 +163,7 @@ char **generate_board(int row, int col) {
     return grid;
 }
 
-char ***read_tile(char *fileName, int *tileAmount) {
+char ***read_tile(char *fileName, int *tileAmount, int *error) {
     FILE *file = fopen(fileName, "r");
     char character;
     int row = 0, col = 0, size = 0;
@@ -168,10 +176,12 @@ char ***read_tile(char *fileName, int *tileAmount) {
         while ((character = getc(file)) != EOF) {
             if (character != '\n' && character != ','
                     && character != '!') {
+                *error = 3;
                 return NULL;
             }
             if (((row == 5 && col == 4) || (row == 0 && col == -1))
                     && character != '\n') {
+                *error = 3;
                 return NULL;
             }
             if (character == '\n') {
@@ -195,6 +205,7 @@ char ***read_tile(char *fileName, int *tileAmount) {
         }
         fclose(file);
     } else {
+        *error = 2;
         return NULL;
     }
     *tileAmount = size + 1;
@@ -231,3 +242,19 @@ void rotate_tile(char **tile, int step) {
     }
 }
 
+void display_tileset(char **tile) {
+    for (int j = 0; j < 5; j++) {
+        for (int i = 0; i < 4; i++) {
+            for (int k = 0; k < 5; k++) {
+                printf("%c", tile[j][k]);
+            }
+            printf(" ");
+            rotate_tile(tile, 1);
+        }
+        printf("\n");
+    }
+}
+
+void display_tile(char **tile) {
+    
+}
