@@ -26,7 +26,7 @@ void transpose(char **tile);
 void reverse(char **tile);
 void rotate_tile(char **tile, int step);
 void display_tileset(char **tile);
-void place_tile(Board board, char **tile, int x, int y, int angle);
+int place_tile(Board board, char **tile, int x, int y, int angle);
 void display_tile(char **tile);
 
 int main(int argc, char **argv) {
@@ -35,10 +35,9 @@ int main(int argc, char **argv) {
             "[height width | filename]]\n");
         return 1;
     }
-    char ***tiles;
     int tileAmount;
     int errorCode = 0;
-    tiles = read_tile(argv[1], &tileAmount, &errorCode);
+    char ***tiles = read_tile(argv[1], &tileAmount, &errorCode);
     if (errorCode == 0 && argc == 2) {
         for (int i = 0; i < tileAmount; i++) {
             display_tileset(tiles[i]);
@@ -102,9 +101,10 @@ void play_game(char ***tiles, int row, int col) {
             }
             args = split(response, " ");
             if (validate_input(args)) {
-                // place_tile(board, tiles[0], atoi(args[0]), atoi(args[1]),
-                //         atoi(args[2]));
-                break;
+                if (place_tile(board, tiles[0], atoi(args[1]), atoi(args[0]),
+                        atoi(args[2]))) {
+                    break;
+                }
             } else {
                 for (int i = 0; i < MAX_INPUT; i++) {
                     free(args[i]);
@@ -116,6 +116,7 @@ void play_game(char ***tiles, int row, int col) {
             free(args[i]);
         }
         free(args);
+        draw_board(board);
         printf("loop complete\n");
         gameEnded = 1;  
     }
@@ -212,6 +213,10 @@ char ***read_tile(char *fileName, int *tileAmount, int *error) {
                 *error = 3;
                 return NULL;
             }
+            if (row > 5) {
+                *error = 3;
+                return NULL;
+            }
             if (character == '\n') {
                 col++;
                 if (col == 5) {
@@ -292,7 +297,88 @@ void display_tile(char **tile) {
     }
 }
 
-void place_tile(Board board, char **tile, int x, int y, int angle) {
-    printf("placing at %i %i\n", x, y);
-    display_tile(tile);
+int pair_in_array(int x, int y, int array[25][2], int size) {
+    for (int i = 0; i < size; i++) {
+        if (array[i][0] == y && array[i][1] == x) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int place_tile(Board board, char **tile, int x, int y, int angle) {
+    switch(angle) {
+        case 90:
+            rotate_tile(tile, 1);
+            break;
+        case 180:
+            rotate_tile(tile, 2);
+            break;
+        case 270:
+            rotate_tile(tile, 3);
+            break;
+    }
+    int yMax = y + 2;
+    int yMin = y - 2;
+    int xMax = x + 2;
+    int xMin = x - 2;
+    if (yMin < 0) {
+        yMin = 0;
+    }
+    if (xMin < 0) {
+        xMin = 0;
+    }
+    if (yMax > board.col - 1) {
+        yMax = board.col - 1;
+    }
+    if (xMax > board.row - 1) {
+        xMax = board.row - 1;
+    }
+    int tilePoints[25][2];
+    int counter = 0;
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+            tilePoints[counter][0] = i;
+            tilePoints[counter][1] = j;
+            counter++;
+        }
+    }
+    int tilePointsOnBoard[25][2];
+    counter = 0;
+    for (int i = yMin; i <= yMax; i++) {
+        for (int j = xMin; j <= xMax; j++) {
+            tilePointsOnBoard[counter][0] = i - (y - 2);
+            tilePointsOnBoard[counter][1] = j - (x - 2);
+            counter++;
+            if (board.grid[i][j] != '.' &&
+                    tile[i - (y - 2)][j - (x - 2)] != ',') {
+                return 0;
+            }
+        }
+    }
+    int tilePointsNotOnBoard[25][2];
+    int arraySize = 0;
+    for (int i = 0; i < 25; i++) {
+        if (!pair_in_array(tilePoints[i][1], tilePoints[i][0],
+                tilePointsOnBoard, counter)) {
+            tilePointsNotOnBoard[arraySize][1] = tilePoints[i][0];
+            tilePointsNotOnBoard[arraySize][0] = tilePoints[i][1];
+            arraySize++;
+        }
+    }
+    for (int i = 0; i < arraySize; i++) {
+        int col = tilePointsNotOnBoard[i][0];
+        int row = tilePointsNotOnBoard[i][1];
+        if (tile[col][row] == '!') {
+            return 0;
+        }
+    }
+    for (int i = yMin; i <= yMax; i++) {
+        for (int j = xMin; j <= xMax; j++) {
+            if (tile[i - (y - 2)][j - (x - 2)] == '!') {
+                board.grid[i][j] = '#';
+            }
+        }
+    }
+    return 1;
 }
