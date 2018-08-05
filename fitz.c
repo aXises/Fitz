@@ -14,7 +14,7 @@ typedef struct {
 } Board;
 
 // Function prototypes.
-void play_game(char ***tiles, int row, int col);
+void play_game(char ***tiles, int tileAmount, int row, int col);
 void draw_board(Board board);
 void request_input(char *response);
 int validate_input(char **args);
@@ -26,10 +26,10 @@ void transpose(char **tile);
 void reverse(char **tile);
 void rotate_tile(char **tile, int step);
 void display_tileset(char **tile);
-int place_tile(Board board, char **tile, int x, int y, int angle);
 void display_tile(char **tile);
 int pair_in_array(int x, int y, int array[25][2], int size);
-int place_tile(Board board, char **tile, int x, int y, int angle);
+int place_tile(Board board, char **tile, int x, int y, int angle, int test);
+int game_is_over(Board board, char **tile);
 
 int main(int argc, char **argv) {
     if (argc == 1 || argc > 6) {
@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
             fprintf(stderr, "Invalid dimensions\n");
             return 5;             
         }
-        play_game(tiles, atoi(argv[5]), atoi(argv[4]));
+        play_game(tiles, tileAmount, atoi(argv[5]), atoi(argv[4]));
     }
     for (int i = 0; i < tileAmount; i++) {
         for (int j = 0; j < 5; j++) {
@@ -84,18 +84,26 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void play_game(char ***tiles, int row, int col) {
-    int gameEnded = 0;
+void play_game(char ***tiles, int tileAmount, int row, int col) {
     Board board;
     board.grid = generate_board(row, col);
     board.row = row;
     board.col = col;
-    display_tile(tiles[0]);
-    printf("\n");
-    draw_board(board);
-    while (!gameEnded) {
+    int tileCounter = 0;
+    while (1) {
         char response[MAX_INPUT];
         char **args;
+        if (tileCounter == tileAmount) {
+            tileCounter = 0;
+        }
+        draw_board(board);
+        if(game_is_over(board, tiles[tileCounter])) {
+            printf("game over\n");
+            break;
+        }
+        printf("\n");
+        display_tile(tiles[tileCounter]);
+        printf("Player *] ");
         while (1) {
             fgets(response, sizeof(response), stdin);
             if (strlen(response) > MAX_INPUT) {
@@ -103,8 +111,9 @@ void play_game(char ***tiles, int row, int col) {
             }
             args = split(response, " ");
             if (validate_input(args)) {
-                if (place_tile(board, tiles[0], atoi(args[1]), atoi(args[0]),
-                        atoi(args[2]))) {
+                if (place_tile(board, tiles[tileCounter], atoi(args[1]),
+                        atoi(args[0]), atoi(args[2]), 0)) {
+                    tileCounter++;
                     break;
                 }
             } else {
@@ -118,9 +127,6 @@ void play_game(char ***tiles, int row, int col) {
             free(args[i]);
         }
         free(args);
-        draw_board(board);
-        printf("loop complete\n");
-        gameEnded = 1;  
     }
     for (int i = 0; i < col; i++) {
         free(board.grid[i]);
@@ -308,18 +314,28 @@ int pair_in_array(int x, int y, int array[25][2], int size) {
     return 0;
 }
 
-int place_tile(Board board, char **tile, int x, int y, int angle) {
+int place_tile(Board board, char **tile, int x, int y, int angle, int test) {
+    int rotation = 4;
     switch(angle) {
         case 90:
             rotate_tile(tile, 1);
+            rotation = 1;
             break;
         case 180:
             rotate_tile(tile, 2);
+            rotation = 2;
             break;
         case 270:
             rotate_tile(tile, 3);
+            rotation = 3;
             break;
     }
+    // for (int i = 0; i < 5; i++) {
+    //     for (int j = 0; j < 5; j++) {
+    //         printf("(%i %i %c)", i, j, tile[i][j]);
+    //     }
+    //     printf("\n");
+    // }
     int yMax = y + 2;
     int yMin = y - 2;
     int xMax = x + 2;
@@ -354,6 +370,7 @@ int place_tile(Board board, char **tile, int x, int y, int angle) {
             counter++;
             if (board.grid[i][j] != '.' &&
                     tile[i - (y - 2)][j - (x - 2)] != ',') {
+                rotate_tile(tile, 4 - rotation);
                 return 0;
             }
         }
@@ -363,8 +380,8 @@ int place_tile(Board board, char **tile, int x, int y, int angle) {
     for (int i = 0; i < 25; i++) {
         if (!pair_in_array(tilePoints[i][1], tilePoints[i][0],
                 tilePointsOnBoard, counter)) {
-            tilePointsNotOnBoard[arraySize][1] = tilePoints[i][0];
-            tilePointsNotOnBoard[arraySize][0] = tilePoints[i][1];
+            tilePointsNotOnBoard[arraySize][0] = tilePoints[i][0];
+            tilePointsNotOnBoard[arraySize][1] = tilePoints[i][1];
             arraySize++;
         }
     }
@@ -372,13 +389,31 @@ int place_tile(Board board, char **tile, int x, int y, int angle) {
         int col = tilePointsNotOnBoard[i][0];
         int row = tilePointsNotOnBoard[i][1];
         if (tile[col][row] == '!') {
+            rotate_tile(tile, 4 - rotation);
             return 0;
         }
     }
-    for (int i = yMin; i <= yMax; i++) {
-        for (int j = xMin; j <= xMax; j++) {
-            if (tile[i - (y - 2)][j - (x - 2)] == '!') {
-                board.grid[i][j] = '#';
+    if (!test) {
+        for (int i = yMin; i <= yMax; i++) {
+            for (int j = xMin; j <= xMax; j++) {
+                if (tile[i - (y - 2)][j - (x - 2)] == '!') {
+                    board.grid[i][j] = '#';
+                }
+            }
+        }
+    }
+    rotate_tile(tile, 4 - rotation);
+    return 1;
+}
+
+int game_is_over(Board board, char **tile) {
+    for (int angle = 0; angle < 4; angle++) {
+        for (int i = -2; i < board.col + 1; i++) {
+            for (int j = -2; j < board.row + 1; j++) {
+                int m = place_tile(board, tile, i, j, angle * 90, 1);
+                if (m) {
+                    return 0;
+                }
             }
         }
     }
