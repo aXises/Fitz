@@ -28,6 +28,8 @@ void rotate_tile(char **tile, int step);
 void display_tileset(char **tile);
 int place_tile(Board board, char **tile, int x, int y, int angle);
 void display_tile(char **tile);
+int pair_in_array(int x, int y, int array[25][2], int size);
+int place_tile(Board board, char **tile, int x, int y, int angle);
 
 int main(int argc, char **argv) {
     if (argc == 1 || argc > 6) {
