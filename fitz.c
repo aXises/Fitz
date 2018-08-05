@@ -31,6 +31,7 @@ int pair_in_array(int x, int y, int array[25][2], int size);
 int place_tile(Board board, char **tile, int x, int y, int angle, int player,
         int test);
 int game_is_over(Board board, char **tile);
+int save(char *filename, Board board, int nextTile, int nextPlayer);
 
 int main(int argc, char **argv) {
     if (argc == 1 || argc > 6) {
@@ -120,13 +121,16 @@ void play_game(char ***tiles, int tileAmount, int row, int col) {
                 continue;
             }
             args = split(response, " ");
-            if (validate_input(args)) {
+            int status = validate_input(args);
+            if (status == 1) {
                 if (place_tile(board, tiles[tileCounter], atoi(args[1]),
                         atoi(args[0]), atoi(args[2]), currentPlayer, 0)) {
                     tileCounter++;
                     currentPlayer = !currentPlayer;
                     break;
                 }
+            } else if (status == 2) {
+                save(args[1], board, tileCounter, currentPlayer);
             } else {
                 for (int i = 0; i < MAX_INPUT; i++) {
                     free(args[i]);
@@ -163,9 +167,12 @@ int validate_input(char **args) {
     while (args[argLength][strlen(args[argLength]) - 1] != '\n') {
         argLength++;
     }
-    // Check for 3 arguments
-    if ((argLength + 1) != 3) {
+    // Check for 3 or 2 arguments
+    if ((argLength + 1) != 3 && (argLength + 1) != 2) {
         return 0;
+    }
+    if (argLength + 1 == 2 && strcmp(args[0], "save") == 0) {
+        return 2;
     }
     // Ensure inputs are digits
     for (int i = 0; i <= (argLength); i++) {
@@ -433,5 +440,21 @@ int game_is_over(Board board, char **tile) {
             }
         }
     }
+    return 1;
+}
+
+int save(char *filename, Board board, int nextTile, int nextPlayer) {
+    FILE *file = fopen(filename, "w");
+    if (file == NULL) {
+        return 0;
+    }
+    fprintf(file, "%i %i %i %i\n", nextTile, nextPlayer, board.row, board.col);
+    for (int i = 0; i < board.col; i++) {
+        for (int j = 0; j < board.row; j++) {
+            fprintf(file, "%c", board.grid[i][j]);
+        }
+        fprintf(file, "\n");
+    }
+    fclose(file);
     return 1;
 }
