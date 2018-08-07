@@ -14,6 +14,7 @@ typedef struct {
 } Board;
 
 // Function prototypes.
+void free_tiles(char ***tiles, int tileAmount);
 void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
         char *p1Type, char *p2Type);
 void draw_board(Board board);
@@ -35,8 +36,9 @@ int game_is_over(Board board, char **tile);
 int save(char *filename, Board board, int nextTile, int nextPlayer);
 Board load(char *filename, int *tileIndex, int *playerTurn, int *errorCode);
 void type1_play(Board board, char **tile, int *rStart, int *cStart,
-        int player);
-void type2_play();
+        int *angle, int player);
+void type2_play(Board board, char **tile, int *rStart, int *cStart,
+        int *angle, int player);
 
 int main(int argc, char **argv) {
     if (argc == 1 || argc == 3 || argc == 4 || argc > 6) {
@@ -68,16 +70,19 @@ int main(int argc, char **argv) {
                 strcmp(argv[2], "2") == 0) || !(strcmp(argv[3], "h") == 0 ||
                 strcmp(argv[3], "1") == 0 || strcmp(argv[3], "2") == 0)) {
             fprintf(stderr, "Invalid player type\n");
+            free_tiles(tiles, tileAmount);
             return 4;
         }
         if (argc == 6) {
             if (!isdigit(*argv[4]) || !isdigit(*argv[5])) {
                 fprintf(stderr, "Invalid dimensions\n");
+                free_tiles(tiles, tileAmount);
                 return 5;
             }
             if (atoi(argv[4]) < 1 || atoi(argv[4]) > 999 ||
                         atoi(argv[5]) < 1 || atoi(argv[5]) > 999 ) {
                 fprintf(stderr, "Invalid dimensions\n");
+                free_tiles(tiles, tileAmount);
                 return 5;             
             }
             play_game(tiles, tileAmount, atoi(argv[5]), atoi(argv[4]), NULL,
@@ -86,6 +91,11 @@ int main(int argc, char **argv) {
             play_game(tiles, tileAmount, 0, 0, argv[4], argv[2], argv[3]);
         }
     }
+    free_tiles(tiles, tileAmount);
+    return 0;
+}
+
+void free_tiles(char ***tiles, int tileAmount) {
     for (int i = 0; i < tileAmount; i++) {
         for (int j = 0; j < 5; j++) {
             free(tiles[i][j]);
@@ -93,14 +103,13 @@ int main(int argc, char **argv) {
         free(tiles[i]);
     }
     free(tiles);
-    return 0;
 }
 
 void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
         char *p1Type, char *p2Type) {
     Board board;
     int tileCounter = 0;
-    int currentPlayer = 0;
+    int currentPlayer = 1;
     if (file != NULL) {
         int errorCode;
         board = load(file, &tileCounter, &currentPlayer, &errorCode);
@@ -120,45 +129,75 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
         board.row = row;
         board.col = col;
         tileCounter = 0;
-        currentPlayer = 0;
+        currentPlayer = 1;
     }
     while (1) {
         draw_board(board);
-        display_tile(tiles[tileCounter]);
         char response[MAX_INPUT];
         char **args;
         if (tileCounter == tileAmount) {
             tileCounter = 0;
         }
         if(game_is_over(board, tiles[tileCounter])) {
-            if (!currentPlayer) {
-                printf("Player * wins\n");
-            } else {
+            if (currentPlayer) {
                 printf("Player # wins\n");
+            } else {
+                printf("Player * wins\n");
             }
             break;
         }
-        int p1RecentR = -2;
-        int p1RecentC = -2;
+        int p1RecentR = NULL;
+        int p1RecentC = NULL;
+        int p2RecentR = NULL;
+        int p2RecentC = NULL;
         int noArgs = 0;
         if ((strcmp(p1Type, "1") == 0 || strcmp(p1Type, "2") == 0) &&
                 currentPlayer) {
-            type1_play(board, tiles[tileCounter], &p1RecentR,
-                    &p1RecentC, currentPlayer);
-            printf("placed at %i %i\n", p1RecentR, p1RecentC);
+            int angle;
+            if (strcmp(p1Type, "1") == 0) {
+                type1_play(board, tiles[tileCounter], &p1RecentR, &p1RecentC,
+                        &angle, currentPlayer);
+            } else {
+                type2_play(board, tiles[tileCounter], &p2RecentR, &p2RecentC,
+                        &angle, currentPlayer);
+                p1RecentR = p2RecentR;
+                p1RecentC = p2RecentC;
+            }
+            if (currentPlayer) {
+                printf("Player * => %i %i rotated %i\n", p1RecentR,
+                        p1RecentC, angle);
+            } else {
+                printf("Player # => %i %i rotated %i\n", p1RecentR,
+                        p1RecentC, angle);   
+            }
             currentPlayer = !currentPlayer;
             noArgs = 1;
         } else if ((strcmp(p2Type, "1") == 0 || strcmp(p2Type, "2") == 0) &&
-                currentPlayer) {
-            type1_play(board, tiles[tileCounter], &p1RecentR,
-                    &p1RecentC, currentPlayer);
-            printf("placed at %i %i\n", p1RecentR, p1RecentC);
+                !currentPlayer) {
+            int angle;
+            if (strcmp(p2Type, "1") == 0) {
+                type1_play(board, tiles[tileCounter], &p1RecentR, &p1RecentC,
+                        &angle, currentPlayer);
+            } else {
+                type2_play(board, tiles[tileCounter], &p2RecentR, &p2RecentC,
+                        &angle, currentPlayer);
+                p1RecentR = p2RecentR;
+                p1RecentC = p2RecentC;
+            }
+            if (currentPlayer) {
+                printf("Player * => %i %i rotated %i\n", p1RecentR,
+                        p1RecentC, angle);
+            } else {
+                printf("Player # => %i %i rotated %i\n", p1RecentR,
+                        p1RecentC, angle); 
+            }
             currentPlayer = !currentPlayer;
             noArgs = 1;
         }
         else {
+            display_tile(tiles[tileCounter]);
             while (1) {
-                if (!currentPlayer) {
+                if (currentPlayer) {
                     printf("Player *] ");    
     
                 } else {
@@ -174,19 +213,14 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
                 if (status == 1) {
                     if (place_tile(board, tiles[tileCounter], atoi(args[1]),
                             atoi(args[0]), atoi(args[2]), currentPlayer, 0)) {
-                        // if (currentPlayer) {
-                        //     printf("Player * => %s %s rotated %s", args[0],
-                        //             args[1], args[2]);
-                        // } else {
-                        //     printf("Player # => %s %s rotated %s", args[0],
-                        //             args[1], args[2]);   
-                        // }
+                        p1RecentR = atoi(args[0]);
+                        p1RecentC = atoi(args[1]);
                         currentPlayer = !currentPlayer;
                         break;
                     }
                 } else if (status == 2) {
                     char *filename = malloc(sizeof(char) *
-                            (strlen(args[1]) - 2));
+                            (strlen(args[1])));
                     for (int i = 0; i < strlen(args[1]) - 1; i++) {
                         filename[i] = args[1][i];
                     }
@@ -196,6 +230,10 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
                     }
                     free(filename);
                 }
+                for (int i = 0; i < MAX_INPUT; i++) {
+                    free(args[i]);
+                }
+                free(args);   
             }
         if (!noArgs) {
             for (int i = 0; i < MAX_INPUT; i++) {
@@ -231,14 +269,13 @@ int validate_input(char **args) {
         argLength++;
     }
     // Check for 3 or 2 arguments
-    if ((argLength + 1) != 3 && (argLength + 1) != 2) {
-        return 0;
-    }
     if (argLength + 1 == 2 && strcmp(args[0], "save") == 0) {
         return 2;
+    } else if ((argLength + 1) != 3) {
+        return 0;
     }
     // Ensure inputs are digits
-    for (int i = 0; i <= (argLength); i++) {
+    for (int i = 0; i <= argLength; i++) {
         if (args[i][0] == '-') {
             if (!isdigit(args[i][1])) {
                 return 0;
@@ -311,15 +348,23 @@ char ***read_tile(char *filename, int *tileAmount, int *error) {
             if (character != '\n' && character != ','
                     && character != '!') {
                 *error = 3;
+                free_tiles(tiles, size + 1);
+                return NULL;
+            }
+            if (row != 5 && col != -1 && character == '\n') {
+                *error = 3;
+                free_tiles(tiles, size + 1);
                 return NULL;
             }
             if (((row == 5 && col == 4) || (row == 0 && col == -1))
                     && character != '\n') {
                 *error = 3;
+                free_tiles(tiles, size + 1);
                 return NULL;
             }
             if (row > 5) {
                 *error = 3;
+                free_tiles(tiles, size + 1);
                 return NULL;
             }
             if (character == '\n') {
@@ -336,6 +381,11 @@ char ***read_tile(char *filename, int *tileAmount, int *error) {
                 }
                 row = 0;
             } else {
+                if (row >= 5) {
+                    *error = 3;
+                    free_tiles(tiles, size + 1);
+                    return NULL;
+                }
                 tiles[size][col][row] = character;
                 row++;
             }
@@ -343,7 +393,8 @@ char ***read_tile(char *filename, int *tileAmount, int *error) {
         fclose(file);
     } else {
         *error = 2;
-        return NULL;
+        free_tiles(tiles, size + 1);
+        return tiles;
     }
     *tileAmount = size + 1;
     return tiles;
@@ -525,7 +576,9 @@ int save(char *filename, Board board, int nextTile, int nextPlayer) {
         for (int j = 0; j < board.row; j++) {
             fprintf(file, "%c", board.grid[i][j]);
         }
-        fprintf(file, "\n");
+        if (i != board.col - 1) {
+            fprintf(file, "\n");
+        }
     }
     fclose(file);
     return 1;
@@ -605,6 +658,7 @@ Board load(char *filename, int *tileIndex, int *playerTurn, int *errorCode) {
         fclose(file);
     } else {
         *errorCode = 2;
+        return board;
     }
     for (int i = 0; i < MAX_INPUT; i++) {
         free(array[i]);
@@ -614,15 +668,20 @@ Board load(char *filename, int *tileIndex, int *playerTurn, int *errorCode) {
 }
 
 void type1_play(Board board, char **tile, int *rStart, int *cStart,
-        int player) {
-    int angle = 0;
+        int *angle, int player) {
+    *angle = 0;
+    if (rStart == NULL) {
+        *rStart = -2;
+    }
+    if (cStart == NULL) {
+        *cStart = -2;
+    }
     int r = *rStart;
     int c = *cStart;
     do {
         do {
-            if (place_tile(board, tile, r, c, angle, player, 1)) {
-                place_tile(board, tile, r, c, angle, player, 0);
-                // printf("placed\n");
+            if (place_tile(board, tile, r, c, *angle, player, 1)) {
+                place_tile(board, tile, r, c, *angle, player, 0);
                 *rStart = r;
                 *cStart = c;
                 return;
@@ -635,8 +694,59 @@ void type1_play(Board board, char **tile, int *rStart, int *cStart,
             if (r > board.row + 2) {
                 r = -2;
             }
-            // printf("%i %i - %i %i\n", r, *rStart, c, *cStart);
         } while (r != *rStart || c != *cStart); 
-        angle += 90;
-    } while (angle <= 270);
+        *angle += 90;
+    } while (*angle <= 270);
+}
+
+void type2_play(Board board, char **tile, int *rStart, int *cStart,
+        int *angle, int player) {
+    if (player) {
+        if (rStart == NULL) {
+            *rStart = -2;
+        }
+        if (cStart == NULL) {
+            *cStart = -2;
+        }
+    } else {
+        if (rStart == NULL) {
+            *rStart = board.row + 2;
+        }
+        if (cStart == NULL) {
+            *cStart = board.col + 2;
+        }
+    }
+    int r = *rStart;
+    int c = *cStart;
+    do {
+        *angle = 0;
+        do {
+            if (place_tile(board, tile, r, c, *angle, player, 1)) {
+                place_tile(board, tile, r, c, *angle, player, 0);
+                *rStart = r;
+                *cStart = c;
+                return;
+            }
+            *angle += 90;
+        } while (*angle <= 270);
+        if (player) {
+            c++;
+            if (c > board.col + 2) {
+                c = -2;
+                r++;
+            }
+            if (r > board.row + 2) {
+                r = -2;
+            }
+        } else {
+            c--;
+            if (c == -2) {
+                c = board.col + 2;
+                r--;
+            }
+            if (r == -2) {
+                r = board.row + 2;
+            }
+        }
+    } while (r != *rStart || c != *cStart);
 }
