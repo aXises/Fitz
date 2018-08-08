@@ -40,6 +40,7 @@ void type1_play(Board board, char **tile, int *rStart, int *cStart,
 void type2_play(Board board, char **tile, int *rStart, int *cStart,
         int *angle, int player);
 
+
 int main(int argc, char **argv) {
     if (argc == 1 || argc == 3 || argc == 4 || argc > 6) {
         fprintf(stderr, "Usage: fitz tilefile [p1type p2type " \
@@ -48,6 +49,7 @@ int main(int argc, char **argv) {
     }
     int tileAmount;
     int errorCode = 0;
+    // read_tiles2(argv[1]);
     char ***tiles = read_tile(argv[1], &tileAmount, &errorCode);
     if (errorCode == 0 && argc == 2) {
         for (int i = 0; i < tileAmount; i++) {
@@ -334,68 +336,62 @@ char **generate_board(int row, int col) {
 }
 
 char ***read_tile(char *filename, int *tileAmount, int *error) {
-    FILE *file = fopen(filename, "r");
-    char character;
-    int row = 0, col = 0, size = 0;
-    char ***tiles = malloc(sizeof(char **));
-    tiles[size] = malloc(sizeof(char *) * 5);
-    for (int i = 0; i < 5; i++) {
-        tiles[size][i] = malloc(sizeof(char) * 5);
-    }   
+    FILE *file = fopen(filename, "r");    
+    char *content = malloc(0);
+    char ***tiles = NULL;
+    int charCount = 0;
     if (file) {
+        char character;
         while ((character = getc(file)) != EOF) {
-            if (character != '\n' && character != ','
-                    && character != '!') {
-                *error = 3;
-                free_tiles(tiles, size + 1);
-                return NULL;
-            }
-            if (row != 5 && col != -1 && character == '\n') {
-                *error = 3;
-                free_tiles(tiles, size + 1);
-                return NULL;
-            }
-            if (((row == 5 && col == 4) || (row == 0 && col == -1))
-                    && character != '\n') {
-                *error = 3;
-                free_tiles(tiles, size + 1);
-                return NULL;
-            }
-            if (row > 5) {
-                *error = 3;
-                free_tiles(tiles, size + 1);
-                return NULL;
-            }
-            if (character == '\n') {
-                col++;
-                if (col == 5) {
-                    size++;
-                    tiles = realloc(tiles,
-                            sizeof(char **) * (size + 1));
-                    tiles[size] = malloc(sizeof(char *) * 5);
-                    for (int i = 0; i < 5; i++) {
-                        tiles[size][i] = malloc(sizeof(char) * 5);
-                    }  
-                    col = -1;
-                }
-                row = 0;
-            } else {
-                if (row >= 5) {
-                    *error = 3;
-                    free_tiles(tiles, size + 1);
-                    return NULL;
-                }
-                tiles[size][col][row] = character;
-                row++;
+            content = realloc(content, sizeof(char) * (charCount + 1));
+            content[charCount] = character;
+            charCount++;
+        }
+        int size = 0;
+        char *contentSymbol = malloc(0);
+        for (int i = 0; i < charCount; i++) {
+            if (content[i] != '\n') {
+                contentSymbol = realloc(contentSymbol, sizeof(char) * (size + 1));
+                contentSymbol[size] = content[i];
+                size++;
             }
         }
-        fclose(file);
+        if (size % 25 != 0) {
+                *error = 3;
+                return tiles;
+        }
+        tiles = malloc(sizeof(char **) * (size / 25));
+        *tileAmount = size / 25;
+        int index = 0, col = -1, row = 0;
+        tiles[index] = malloc(sizeof(char *) * 5);
+        for (int i = 0; i < 5; i++) {
+            tiles[index][i] = malloc(sizeof(char) * 5);
+        }
+        for (int i = 0; i < strlen(contentSymbol); i++) {
+            if (content[i] != '\n' && content[i] != ','
+                    && content[i] != '!') {
+                *error = 3;
+                return tiles;
+            }
+            if (i % 5 == 0 && i != 0) {
+                col = -1;
+                row++;
+            }
+            if (i % 25 == 0 && i != 0) {
+                row = 0;
+                index++;
+                tiles[index] = malloc(sizeof(char *) * 5);
+                for (int i = 0; i < 5; i++) {
+                    tiles[index][i] = malloc(sizeof(char) * 5);
+                }
+            }
+            col++;
+            tiles[index][col][row] = contentSymbol[i];
+        }
     } else {
         *error = 2;
-        free_tiles(tiles, size + 1);
         return tiles;
     }
-    *tileAmount = size + 1;
     return tiles;
 }
 
@@ -555,8 +551,7 @@ int game_is_over(Board board, char **tile) {
     for (int angle = 0; angle < 4; angle++) {
         for (int i = -2; i < board.col + 1; i++) {
             for (int j = -2; j < board.row + 1; j++) {
-                int m = place_tile(board, tile, i, j, angle * 90, 0, 1);
-                if (m) {
+                if (place_tile(board, tile, i, j, angle * 90, 0, 1)) {
                     return 0;
                 }
             }
