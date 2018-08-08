@@ -20,7 +20,7 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
 void draw_board(Board board);
 void request_input(char *response);
 int validate_input(char **args);
-char **split(char* string, char *character);
+char **split(char *string, char *character);
 char **generate_board(int row, int col);
 char ***read_tile(char *filename, int *tileAmount, int *error);
 void swap(char *elemA, char *elemB);
@@ -43,7 +43,7 @@ void type2_play(Board board, char **tile, int *rStart, int *cStart,
 int main(int argc, char **argv) {
     if (argc == 1 || argc == 3 || argc == 4 || argc > 6) {
         fprintf(stderr, "Usage: fitz tilefile [p1type p2type " \
-            "[height width | filename]]\n");
+                "[height width | filename]]\n");
         return 1;
     }
     int tileAmount;
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
                 return 5;
             }
             if (atoi(argv[4]) < 1 || atoi(argv[4]) > 999 ||
-                        atoi(argv[5]) < 1 || atoi(argv[5]) > 999 ) {
+                    atoi(argv[5]) < 1 || atoi(argv[5]) > 999) {
                 fprintf(stderr, "Invalid dimensions\n");
                 free_tiles(tiles, tileAmount);
                 return 5;             
@@ -193,8 +193,7 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
             }
             currentPlayer = !currentPlayer;
             noArgs = 1;
-        }
-        else {
+        } else {
             display_tile(tiles[tileCounter]);
             while (1) {
                 if (currentPlayer) {
@@ -235,14 +234,14 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
                 }
                 free(args);   
             }
-        if (!noArgs) {
-            for (int i = 0; i < MAX_INPUT; i++) {
-                free(args[i]);
+            if (!noArgs) {
+                for (int i = 0; i < MAX_INPUT; i++) {
+                    free(args[i]);
+                }
+                free(args);   
             }
-            free(args);   
         }
-    }
-    tileCounter++;
+        tileCounter++;
     }
     for (int i = 0; i < board.col; i++) {
         free(board.grid[i]);
