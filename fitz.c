@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
         }
     } else if (errorCode > 0) {
         if (errorCode == 2) {
-            fprintf(stderr, "Can’t access tile file\n");
+            fprintf(stderr, "Can't access tile file\n");
         }
         if (errorCode == 3) {
             fprintf(stderr, "Invalid tile file contents\n");
@@ -122,7 +122,7 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
             fprintf(stderr, "Invalid save file contents\n");
             exit(7);
         } else if (errorCode == 2) {
-            fprintf(stderr, "Can’t access save file\n");
+            fprintf(stderr, "Can't access save file\n");
             exit(6);
         }
     } else {
@@ -132,10 +132,10 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
         tileCounter = 0;
         currentPlayer = 1;
     }
-    int p1RecentR = NULL;
-    int p1RecentC = NULL;
-    int p2RecentR = NULL;
-    int p2RecentC = NULL;
+    int p1RecentR = -3;
+    int p1RecentC = -3;
+    int p2RecentR = -3;
+    int p2RecentC = -3;
     while (1) {
         draw_board(board);
         char response[MAX_INPUT];
@@ -672,10 +672,10 @@ Board load(char *filename, int *tileIndex, int *playerTurn, int *errorCode) {
 void type1_play(Board board, char **tile, int *rStart, int *cStart,
         int *angle, int player) {
     *angle = 0;
-    if (rStart == NULL) {
+    if (*rStart == -3) {
         *rStart = -2;
     }
-    if (cStart == NULL) {
+    if (*cStart == -3) {
         *cStart = -2;
     }
     int r = *rStart;
@@ -704,17 +704,17 @@ void type1_play(Board board, char **tile, int *rStart, int *cStart,
 void type2_play(Board board, char **tile, int *rStart, int *cStart,
         int *angle, int player) {
     if (player) {
-        if (rStart == NULL) {
+        if (*rStart == -3) {
             *rStart = -2;
         }
-        if (cStart == NULL) {
+        if (*cStart == -3) {
             *cStart = -2;
         }
     } else {
-        if (rStart == NULL) {
+        if (*rStart == -3) {
             *rStart = board.row + 2;
         }
-        if (cStart == NULL) {
+        if (*cStart == -3) {
             *cStart = board.col + 2;
         }
     }
