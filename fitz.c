@@ -204,7 +204,10 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
                 } else {
                     printf("Player #] ");
                 }
-                fgets(response, sizeof(response), stdin);
+                if(fgets(response, sizeof(response), stdin) == NULL) {
+                    fprintf(stderr, "End of input\n");
+                    exit(10);
+                }
                 if (strlen(response) > MAX_INPUT) {
                     continue;
                 }
