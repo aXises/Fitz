@@ -557,8 +557,8 @@ int place_tile(Board board, char **tile, int x, int y, int angle, int player,
 
 int game_is_over(Board board, char **tile) {
     for (int angle = 0; angle < 4; angle++) {
-        for (int i = -2; i < board.col + 1; i++) {
-            for (int j = -2; j < board.row + 1; j++) {
+        for (int i = -2; i < board.col + 2; i++) {
+            for (int j = -2; j < board.row + 2; j++) {
                 if (place_tile(board, tile, i, j, angle * 90, 0, 1)) {
                     return 0;
                 }
