@@ -351,15 +351,16 @@ char ***read_tile(char *filename, int *tileAmount, int *error) {
         char *contentSymbol = malloc(0);
         for (int i = 0; i < charCount; i++) {
             if (content[i] != '\n') {
-                contentSymbol = realloc(contentSymbol, sizeof(char) * (size + 1));
+                contentSymbol = realloc(contentSymbol,
+                        sizeof(char) * (size + 1));
                 contentSymbol[size] = content[i];
                 size++;
             }
         }
         if (size % 25 != 0) {
-                *error = 3;
-                free(content);
-                return tiles;
+            *error = 3;
+            free(content);
+            return tiles;
         }
         tiles = malloc(sizeof(char **) * (size / 25));
         *tileAmount = size / 25;
