@@ -116,10 +116,6 @@ void checkError(int errorCode) {
         case 7:
             fprintf(stderr, "Invalid save file contents\n");
             break;
-        case 8:
-            break;
-        case 9:
-            break;
         case 10:
             fprintf(stderr, "End of input\n");
             break;
@@ -764,12 +760,12 @@ Board load(char *filename, int *tileIndex, int *playerTurn, int *errorCode) {
                     array = split_with_size(line, " ", &size);
                     free(line);
                     if (size != 4) {
-                        *errorCode = 1;
+                        *errorCode = 7;
                         break;
                     }
                     for (int i = 0; i < size; i++) {
                         if (atoi(array[i]) == 0 && array[i][0] != '0') {
-                            *errorCode = 1;
+                            *errorCode = 7;
                             break;
                         }
                     }
@@ -790,12 +786,12 @@ Board load(char *filename, int *tileIndex, int *playerTurn, int *errorCode) {
                     colMax++;
                 }
                 if (col == board.col || row == board.row + 1) {
-                    *errorCode = 1;
+                    *errorCode = 7;
                     break;
                 }
                 if (character != '.' && character != '#' && 
                         character != '*' && character != '\n') {
-                    *errorCode = 1;
+                    *errorCode = 7;
                     break;
                 }
                 board.grid[col][row] = character;
@@ -808,11 +804,11 @@ Board load(char *filename, int *tileIndex, int *playerTurn, int *errorCode) {
             counter++;
         }
         if ((rowMax - 1) != board.row || (colMax + 1) != board.col) {
-            *errorCode = 1;
+            *errorCode = 7;
         }
         fclose(file);
     } else {
-        *errorCode = 2;
+        *errorCode = 6;
         return board;
     }
     for (int i = 0; i < MAX_INPUT; i++) {
