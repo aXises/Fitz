@@ -49,7 +49,6 @@ int main(int argc, char **argv) {
     }
     int tileAmount;
     int errorCode = 0;
-    // read_tiles2(argv[1]);
     char ***tiles = read_tile(argv[1], &tileAmount, &errorCode);
     if (errorCode == 0 && argc == 2) {
         for (int i = 0; i < tileAmount; i++) {
@@ -133,6 +132,10 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
         tileCounter = 0;
         currentPlayer = 1;
     }
+    int p1RecentR = NULL;
+    int p1RecentC = NULL;
+    int p2RecentR = NULL;
+    int p2RecentC = NULL;
     while (1) {
         draw_board(board);
         char response[MAX_INPUT];
@@ -148,10 +151,7 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
             }
             break;
         }
-        int p1RecentR = NULL;
-        int p1RecentC = NULL;
-        int p2RecentR = NULL;
-        int p2RecentC = NULL;
+
         int noArgs = 0;
         if ((strcmp(p1Type, "1") == 0 || strcmp(p1Type, "2") == 0) &&
                 currentPlayer) {
@@ -358,6 +358,7 @@ char ***read_tile(char *filename, int *tileAmount, int *error) {
         }
         if (size % 25 != 0) {
                 *error = 3;
+                free(content);
                 return tiles;
         }
         tiles = malloc(sizeof(char **) * (size / 25));
@@ -367,10 +368,11 @@ char ***read_tile(char *filename, int *tileAmount, int *error) {
         for (int i = 0; i < 5; i++) {
             tiles[index][i] = malloc(sizeof(char) * 5);
         }
-        for (int i = 0; i < strlen(contentSymbol); i++) {
+        for (int i = 0; i < size; i++) {
             if (content[i] != '\n' && content[i] != ','
                     && content[i] != '!') {
                 *error = 3;
+                free(content);
                 return tiles;
             }
             if (i % 5 == 0 && i != 0) {
@@ -386,8 +388,10 @@ char ***read_tile(char *filename, int *tileAmount, int *error) {
                 }
             }
             col++;
-            tiles[index][col][row] = contentSymbol[i];
+            tiles[index][row][col] = contentSymbol[i];
         }
+        free(contentSymbol);
+        free(content);
     } else {
         *error = 2;
         return tiles;
@@ -674,8 +678,8 @@ void type1_play(Board board, char **tile, int *rStart, int *cStart,
     int c = *cStart;
     do {
         do {
-            if (place_tile(board, tile, r, c, *angle, player, 1)) {
-                place_tile(board, tile, r, c, *angle, player, 0);
+            if (place_tile(board, tile, c, r, *angle, player, 1)) {
+                place_tile(board, tile, c, r, *angle, player, 0);
                 *rStart = r;
                 *cStart = c;
                 return;
@@ -715,8 +719,8 @@ void type2_play(Board board, char **tile, int *rStart, int *cStart,
     do {
         *angle = 0;
         do {
-            if (place_tile(board, tile, r, c, *angle, player, 1)) {
-                place_tile(board, tile, r, c, *angle, player, 0);
+            if (place_tile(board, tile, c, r, *angle, player, 1)) {
+                place_tile(board, tile, c, r, *angle, player, 0);
                 *rStart = r;
                 *cStart = c;
                 return;
