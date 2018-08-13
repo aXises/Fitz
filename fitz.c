@@ -17,14 +17,14 @@ typedef struct {
 
 /* Function prototypes. */
 void free_tiles(char ***tiles, int tileAmount);
-void checkError(int errorCode);
+void checkErr(int errorCode);
 void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
         char *p1Type, char *p2Type);
 void draw_board(Board board);
 int validate_input(char **args);
 char **split(char *string, char *character);
 char **generate_board(int row, int col);
-char ***extract_tiles(char *charArray, int size, int *error);
+char ***extract_tiles(char *charArr, int size, int *error);
 char ***read_tile(char *filename, int *tileAmount, int *error);
 void swap(char *elemA, char *elemB);
 void transpose(char **tile);
@@ -48,7 +48,7 @@ void type2_play(Board board, char **tile, int *rStart, int *cStart,
 /* Program entry point. */
 int main(int argc, char **argv) {
     if (argc == 1 || argc == 3 || argc == 4 || argc > 6) { /* Invalid */
-        checkError(1);
+        checkErr(1);
     }
     int tileAmount, errorCode = 0;
     char ***tiles = read_tile(argv[1], &tileAmount, &errorCode);
@@ -60,23 +60,23 @@ int main(int argc, char **argv) {
             } 
         }
     } 
-    checkError(errorCode);
+    checkErr(errorCode);
     if (argc == 5 || argc == 6) {
         if (!(strcmp(argv[2], "h") == 0 || strcmp(argv[2], "1") == 0 ||
                 strcmp(argv[2], "2") == 0) || !(strcmp(argv[3], "h") == 0 ||
                 strcmp(argv[3], "1") == 0 || strcmp(argv[3], "2") == 0)) {
             free_tiles(tiles, tileAmount);
-            checkError(4);
+            checkErr(4);
         }
         if (argc == 6) {
             if (!isdigit(*argv[4]) || !isdigit(*argv[5])) {
                 free_tiles(tiles, tileAmount);
-                checkError(5);
+                checkErr(5);
             }
             if (atoi(argv[4]) < 1 || atoi(argv[4]) > 999 ||
                     atoi(argv[5]) < 1 || atoi(argv[5]) > 999) {
                 free_tiles(tiles, tileAmount);
-                checkError(5);            
+                checkErr(5);            
             }
             play_game(tiles, tileAmount, atoi(argv[5]), atoi(argv[4]), NULL,
                     argv[2], argv[3]);
@@ -92,11 +92,11 @@ int main(int argc, char **argv) {
 * Handles error and exits the program with the corrosponding exit status.
 * Does nothing if the errorCode is 0.
 */
-void checkError(int errorCode) {
+void checkErr(int errorCode) {
     switch(errorCode) {
         case 1:
             fprintf(stderr, "Usage: fitz tilefile [p1type p2type " \
-                "[height width | filename]]\n");
+                    "[height width | filename]]\n");
             break;
         case 2:
             fprintf(stderr, "Can't access tile file\n");
@@ -152,7 +152,7 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
     int tileCounter = 0, currentPlayer = 1, errorCode = 0;
     if (file != NULL) { /* Load a saved game. */
         board = load(file, &tileCounter, &currentPlayer, &errorCode);
-        checkError(errorCode);
+        checkErr(errorCode);
     } else {
         board.grid = generate_board(row, col);
         board.row = row;
@@ -228,7 +228,7 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
                     printf("Player #] ");
                 }
                 if(fgets(response, sizeof(response), stdin) == NULL) {
-                    checkError(10);
+                    checkErr(10);
                 }
                 if (strlen(response) > MAX_INPUT) {
                     continue;
@@ -384,12 +384,12 @@ char **generate_board(int row, int col) {
 
 /**
 * Extracts tiles from a array of chars.
-* charArray: The array to extract the tiles from.
+* charArr: The array to extract the tiles from.
 * size: Size of the char array.
 * error: Errors which may arise from the function.
 * Returns a 3D array of tiles.
 */
-char ***extract_tiles(char *charArray, int size, int *error) {
+char ***extract_tiles(char *charArr, int size, int *error) {
     char ***tiles = malloc(sizeof(char **) * (size / 25));
     int index = 0, col = -1, row = 0;
     tiles[index] = malloc(sizeof(char *) * 5);
@@ -397,8 +397,8 @@ char ***extract_tiles(char *charArray, int size, int *error) {
         tiles[index][i] = malloc(sizeof(char) * 5);
     }
     for (int i = 0; i < size; i++) {
-        if (charArray[i] != '\n' && charArray[i] != ','
-                && charArray[i] != '!') {
+        if (charArr[i] != '\n' && charArr[i] != ','
+                && charArr[i] != '!') {
             *error = 3;
             return tiles;
         }
@@ -415,7 +415,7 @@ char ***extract_tiles(char *charArray, int size, int *error) {
             }
         }
         col++;
-        tiles[index][row][col] = charArray[i];
+        tiles[index][row][col] = charArr[i];
     }
     return tiles;
 }
@@ -575,7 +575,7 @@ int pair_in_array(int x, int y, int array[25][2], int size) {
 * Returns 0 if tile placement is invalid, 1 otherwise.
 */
 int verify_tile_point(Board board, char **tile, int x, int y, int xMin,
-    int yMin, int xMax, int yMax) {
+        int yMin, int xMax, int yMax) {
     int tilePoints[25][2], tilePointsOnBoard[25][2], counter = 0;
     for (int i = 0; i < 5; i++) {
         for (int j = 0; j < 5; j++) {
