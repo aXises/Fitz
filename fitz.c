@@ -17,7 +17,7 @@ typedef struct {
 
 /* Function prototypes. */
 void free_tiles(char ***tiles, int tileAmount);
-void checkErr(int errorCode);
+void check_err(int errorCode);
 void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
         char *p1Type, char *p2Type);
 void draw_board(Board board);
@@ -48,7 +48,7 @@ void type2_play(Board board, char **tile, int *rStart, int *cStart,
 /* Program entry point. */
 int main(int argc, char **argv) {
     if (argc == 1 || argc == 3 || argc == 4 || argc > 6) { /* Invalid */
-        checkErr(1);
+        check_err(1);
     }
     int tileAmount, errorCode = 0;
     char ***tiles = read_tile(argv[1], &tileAmount, &errorCode);
@@ -60,23 +60,23 @@ int main(int argc, char **argv) {
             } 
         }
     } 
-    checkErr(errorCode);
+    check_err(errorCode);
     if (argc == 5 || argc == 6) {
         if (!(strcmp(argv[2], "h") == 0 || strcmp(argv[2], "1") == 0 ||
                 strcmp(argv[2], "2") == 0) || !(strcmp(argv[3], "h") == 0 ||
                 strcmp(argv[3], "1") == 0 || strcmp(argv[3], "2") == 0)) {
             free_tiles(tiles, tileAmount);
-            checkErr(4);
+            check_err(4);
         }
         if (argc == 6) {
             if (!isdigit(*argv[4]) || !isdigit(*argv[5])) {
                 free_tiles(tiles, tileAmount);
-                checkErr(5);
+                check_err(5);
             }
             if (atoi(argv[4]) < 1 || atoi(argv[4]) > 999 ||
                     atoi(argv[5]) < 1 || atoi(argv[5]) > 999) {
                 free_tiles(tiles, tileAmount);
-                checkErr(5);            
+                check_err(5);            
             }
             play_game(tiles, tileAmount, atoi(argv[5]), atoi(argv[4]), NULL,
                     argv[2], argv[3]);
@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
 * Handles error and exits the program with the corrosponding exit status.
 * Does nothing if the errorCode is 0.
 */
-void checkErr(int errorCode) {
+void check_err(int errorCode) {
     switch(errorCode) {
         case 1:
             fprintf(stderr, "Usage: fitz tilefile [p1type p2type " \
@@ -152,7 +152,7 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
     int tileCounter = 0, currentPlayer = 1, errorCode = 0;
     if (file != NULL) { /* Load a saved game. */
         board = load(file, &tileCounter, &currentPlayer, &errorCode);
-        checkErr(errorCode);
+        check_err(errorCode);
     } else {
         board.grid = generate_board(row, col);
         board.row = row;
@@ -228,7 +228,7 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
                     printf("Player #] ");
                 }
                 if(fgets(response, sizeof(response), stdin) == NULL) {
-                    checkErr(10);
+                    check_err(10);
                 }
                 if (strlen(response) > MAX_INPUT) {
                     continue;
