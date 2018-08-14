@@ -169,8 +169,8 @@ void computer_play(Board board, char **tile, char *p1Type, char *p2Type,
             *p1RecentR = *p2RecentR;
             *p1RecentC = *p2RecentC;
         }
-    } else if ((strcmp(p2Type, "1") == 0 || strcmp(p2Type, "2") == 0) &&
-                !*currentPlayer) {
+    } else if ((strcmp(p2Type, "1") == 0 || strcmp(p2Type, "2") == 0) && 
+            !*currentPlayer) {
         if (strcmp(p2Type, "1") == 0) {
             type1_play(board, tile, *&p1RecentR, *&p1RecentC,
                     *&angle, *currentPlayer);
@@ -258,7 +258,7 @@ void human_play(Board board, char **tile, int tileCounter,
 * currentPlayer: The current player to resture.
 */
 Board load_board(int row, int col, char *file, int *tileCounter,
-    int *currentPlayer) {
+        int *currentPlayer) {
     Board board;
     if (file != NULL) { /* Load a saved game. */
         board = load(file, *&tileCounter, *&currentPlayer);
@@ -305,8 +305,8 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
                 currentPlayer) || ((strcmp(p2Type, "1") == 0 ||
                 strcmp(p2Type, "2") == 0) && !currentPlayer)) {
             computer_play(board, tiles[tileCounter], p1Type, p2Type,
-            &currentPlayer, &angle, &p1RecentR, &p1RecentC,
-            &p2RecentR, &p2RecentC);
+                    &currentPlayer, &angle, &p1RecentR, &p1RecentC,
+                    &p2RecentR, &p2RecentC);
         } else {
             display_tile(tiles[tileCounter]);
             human_play(board, tiles[tileCounter], tileCounter, &currentPlayer,
