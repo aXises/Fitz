@@ -18,6 +18,11 @@ typedef struct {
 /* Function prototypes. */
 void free_tiles(char ***tiles, int tileAmount);
 void check_err(int errorCode);
+void computer_play(Board board, char **tile, char *p1Type, char *p2Type,
+        int *currentPlayer, int *angle, int *p1RecentR, int *p1RecentC,
+        int *p2RecentR, int *p2RecentC);
+void human_play(Board board, char **tile, int tileCounter, 
+        int *currentPlayer, int *p1RecentR, int *p1RecentC);
 void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
         char *p1Type, char *p2Type);
 void draw_board(Board board);
@@ -39,7 +44,8 @@ int place_tile(Board board, char **tile, int x, int y, int angle, int player,
         int test);
 int game_is_over(Board board, char **tile);
 int save(char *filename, Board board, int nextTile, int nextPlayer);
-Board load(char *filename, int *tileIndex, int *playerTurn, int *errorCode);
+Board get_first_line(int counter, char *line);
+Board load(char *filename, int *tileIndex, int *playerTurn);
 void type1_play(Board board, char **tile, int *rStart, int *cStart,
         int *angle, int player);
 void type2_play(Board board, char **tile, int *rStart, int *cStart,
@@ -137,6 +143,134 @@ void free_tiles(char ***tiles, int tileAmount) {
 }
 
 /** 
+* Method for an computer player to place a tile.
+* board: The game board.
+* tile: The tile to be played.
+* p1Type: Player 1 type.
+* p2Type: Player 2 type.
+* currentPlayer: The current player playing.
+* angle: The angle to place the tile.
+* p1RecentR: Recent player 1 row played.
+* p1RecentC: Recent player 1 column played.
+* p2RecentR: Recent player 2 row played.
+* p2RecentC: Recent player 2 column played.
+*/
+void computer_play(Board board, char **tile, char *p1Type, char *p2Type,
+        int *currentPlayer, int *angle, int *p1RecentR, int *p1RecentC,
+        int *p2RecentR, int *p2RecentC) {
+    if ((strcmp(p1Type, "1") == 0 || strcmp(p1Type, "2") == 0) &&
+            *currentPlayer) {
+        if (strcmp(p1Type, "1") == 0) {
+            type1_play(board, tile, *&p1RecentR, *&p1RecentC,
+                    *&angle, *currentPlayer);
+        } else {
+            type2_play(board, tile, *&p2RecentR, *&p2RecentC,
+                    *&angle, *currentPlayer);
+            *p1RecentR = *p2RecentR;
+            *p1RecentC = *p2RecentC;
+        }
+    } else if ((strcmp(p2Type, "1") == 0 || strcmp(p2Type, "2") == 0) &&
+                !*currentPlayer) {
+        if (strcmp(p2Type, "1") == 0) {
+            type1_play(board, tile, *&p1RecentR, *&p1RecentC,
+                    *&angle, *currentPlayer);
+        } else {
+            type2_play(board, tile, *&p2RecentR, *&p2RecentC,
+                    *&angle, *currentPlayer);
+            *p1RecentR = *p2RecentR;
+            *p1RecentC = *p2RecentC;
+        }
+    }
+    if (*currentPlayer) {
+        printf("Player * => %i %i rotated %i\n", *p1RecentR,
+                *p1RecentC, *angle);
+    } else {
+        printf("Player # => %i %i rotated %i\n", *p1RecentR,
+                *p1RecentC, *angle);
+    }
+    *currentPlayer = !*currentPlayer;
+}
+
+/** 
+* Method for an human player to place a tile.
+* board: The game board.
+* tile: The tile to be played.
+* tileConunter: The index of the tile being played.
+* currentPlayer: The current player playing.
+* p1RecentR: Recent row played.
+* p1RecentC: Recent column played.
+*/
+void human_play(Board board, char **tile, int tileCounter, 
+        int *currentPlayer, int *p1RecentR, int *p1RecentC) {
+    char response[MAX_INPUT], **args;
+    int humanPlayed = 0;
+    while (1) {
+        *currentPlayer ? printf("Player *] ") : printf("Player #] ");
+        if(fgets(response, sizeof(response), stdin) == NULL) {
+            check_err(10);
+        }
+        if (strlen(response) > MAX_INPUT) {
+            continue;
+        }
+        args = split(response, " ");
+        int status = validate_input(args);
+        humanPlayed = 1;
+        if (status == 1) {
+            if (place_tile(board, tile, atoi(args[1]),
+                    atoi(args[0]), atoi(args[2]), *currentPlayer, 0)) {
+                *p1RecentR = atoi(args[0]);
+                *p1RecentC = atoi(args[1]);
+                *currentPlayer = !*currentPlayer;
+                break;
+            }
+        } else if (status == 2) {
+            char *filename = malloc(sizeof(char) *
+                    (strlen(args[1])));
+            for (int i = 0; i < strlen(args[1]) - 1; i++) {
+                filename[i] = args[1][i];
+            }
+            filename[strlen(args[1]) - 1] = '\0';
+            if(!save(filename, board, tileCounter, *currentPlayer)) {
+                fprintf(stderr, "Unable to save game\n");
+            }
+            free(filename);
+        }
+        for (int i = 0; i < MAX_INPUT; i++) {
+            free(args[i]);
+        }
+        free(args);
+    }
+    if (humanPlayed) {
+        for (int i = 0; i < MAX_INPUT; i++) {
+            free(args[i]);
+        }
+        free(args);   
+    }
+}
+
+
+/** 
+* Loads or generates a game board/
+* row: The amount of rows on the game board.
+* col: The amount of columns on the game board.
+* file: The saved file to load.
+* tileCounter: The tile counter to restore.
+* currentPlayer: The current player to resture.
+*/
+Board load_board(int row, int col, char *file, int *tileCounter,
+    int *currentPlayer) {
+    Board board;
+    if (file != NULL) { /* Load a saved game. */
+        board = load(file, *&tileCounter, *&currentPlayer);
+    } else {
+        board.grid = generate_board(row, col);
+        board.row = row;
+        board.col = col;
+    }
+    return board;
+}
+
+/** 
 * Initializes a game with a set of paramaters.
 * tiles: The tileset to cycle through.
 * tileAmount: The amount of tiles loaded.
@@ -148,26 +282,17 @@ void free_tiles(char ***tiles, int tileAmount) {
 */
 void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
         char *p1Type, char *p2Type) {
-    Board board;
-    int tileCounter = 0, currentPlayer = 1, errorCode = 0;
-    if (file != NULL) { /* Load a saved game. */
-        board = load(file, &tileCounter, &currentPlayer, &errorCode);
-        check_err(errorCode);
-    } else {
-        board.grid = generate_board(row, col);
-        board.row = row;
-        board.col = col;
-    }
+    int tileCounter = 0, currentPlayer = 1;
+    Board board = load_board(row, col, file, &tileCounter, &currentPlayer);
     /* Initialize variables to track recent plays. */
     int p1RecentR = -3, p1RecentC = -3, p2RecentR = -3, p2RecentC = -3;
     /* Loop which keeps the game playing, game is over on exit. */
     while (1) {
         draw_board(board);
-        char response[MAX_INPUT], **args;
         if (tileCounter == tileAmount) {
             tileCounter = 0;
         }
-        if(game_is_over(board, tiles[tileCounter])) { /* Check if gameover. */
+        if (game_is_over(board, tiles[tileCounter])) {
             if (currentPlayer) {
                 printf("Player # wins\n");
             } else {
@@ -175,98 +300,17 @@ void play_game(char ***tiles, int tileAmount, int row, int col, char *file,
             }
             break;
         }
-        int noArgs = 0;
-        if ((strcmp(p1Type, "1") == 0 || strcmp(p1Type, "2") == 0) &&
-                currentPlayer) {
-            int angle;
-            if (strcmp(p1Type, "1") == 0) {
-                type1_play(board, tiles[tileCounter], &p1RecentR, &p1RecentC,
-                        &angle, currentPlayer);
-            } else {
-                type2_play(board, tiles[tileCounter], &p2RecentR, &p2RecentC,
-                        &angle, currentPlayer);
-                p1RecentR = p2RecentR;
-                p1RecentC = p2RecentC;
-            }
-            if (currentPlayer) {
-                printf("Player * => %i %i rotated %i\n", p1RecentR,
-                        p1RecentC, angle);
-            } else {
-                printf("Player # => %i %i rotated %i\n", p1RecentR,
-                        p1RecentC, angle);   
-            }
-            currentPlayer = !currentPlayer;
-            noArgs = 1;
-        } else if ((strcmp(p2Type, "1") == 0 || strcmp(p2Type, "2") == 0) &&
-                !currentPlayer) {
-            int angle;
-            if (strcmp(p2Type, "1") == 0) {
-                type1_play(board, tiles[tileCounter], &p1RecentR, &p1RecentC,
-                        &angle, currentPlayer);
-            } else {
-                type2_play(board, tiles[tileCounter], &p2RecentR, &p2RecentC,
-                        &angle, currentPlayer);
-                p1RecentR = p2RecentR;
-                p1RecentC = p2RecentC;
-            }
-            if (currentPlayer) {
-                printf("Player * => %i %i rotated %i\n", p1RecentR,
-                        p1RecentC, angle);
-            } else {
-                printf("Player # => %i %i rotated %i\n", p1RecentR,
-                        p1RecentC, angle); 
-            }
-            currentPlayer = !currentPlayer;
-            noArgs = 1;
+        int angle;
+        if (((strcmp(p1Type, "1") == 0 || strcmp(p1Type, "2") == 0) &&
+                currentPlayer) || ((strcmp(p2Type, "1") == 0 ||
+                strcmp(p2Type, "2") == 0) && !currentPlayer)) {
+            computer_play(board, tiles[tileCounter], p1Type, p2Type,
+            &currentPlayer, &angle, &p1RecentR, &p1RecentC,
+            &p2RecentR, &p2RecentC);
         } else {
             display_tile(tiles[tileCounter]);
-            while (1) {
-                if (currentPlayer) {
-                    printf("Player *] ");    
-    
-                } else {
-                    printf("Player #] ");
-                }
-                if(fgets(response, sizeof(response), stdin) == NULL) {
-                    check_err(10);
-                }
-                if (strlen(response) > MAX_INPUT) {
-                    continue;
-                }
-                args = split(response, " ");
-                noArgs = 0;
-                int status = validate_input(args);
-                if (status == 1) {
-                    if (place_tile(board, tiles[tileCounter], atoi(args[1]),
-                            atoi(args[0]), atoi(args[2]), currentPlayer, 0)) {
-                        p1RecentR = atoi(args[0]);
-                        p1RecentC = atoi(args[1]);
-                        currentPlayer = !currentPlayer;
-                        break;
-                    }
-                } else if (status == 2) {
-                    char *filename = malloc(sizeof(char) *
-                            (strlen(args[1])));
-                    for (int i = 0; i < strlen(args[1]) - 1; i++) {
-                        filename[i] = args[1][i];
-                    }
-                    filename[strlen(args[1]) - 1] = '\0';
-                    if(!save(filename, board, tileCounter, currentPlayer)) {
-                        fprintf(stderr, "Unable to save game\n");
-                    }
-                    free(filename);
-                }
-                for (int i = 0; i < MAX_INPUT; i++) {
-                    free(args[i]);
-                }
-                free(args);   
-            }
-            if (!noArgs) {
-                for (int i = 0; i < MAX_INPUT; i++) {
-                    free(args[i]);
-                }
-                free(args);   
-            }
+            human_play(board, tiles[tileCounter], tileCounter, &currentPlayer,
+                    &p1RecentR, &p1RecentC);
         }
         tileCounter++;
     }
@@ -524,7 +568,9 @@ void display_tileset(char **tile) {
             for (int k = 0; k < 5; k++) {
                 printf("%c", tile[j][k]);
             }
-            printf(" ");
+            if (i != 3) {
+                printf(" ");
+            }
             rotate_tile(tile, 1);
         }
         printf("\n");
@@ -734,19 +780,51 @@ int save(char *filename, Board board, int nextTile, int nextPlayer) {
 }
 
 /**
+* Generates a game board from a line.
+* counter: The current value of the counter.
+* line: The line to process.
+* Returns a board struct to begin a game.
+*/
+Board get_first_line(int counter, char *line) {
+    Board board;
+    char **array;
+    int size;
+    line[counter] = '\0';
+    array = split_with_size(line, " ", &size);
+    free(line);
+    if (size != 4) {
+        check_err(7);
+    }
+    for (int i = 0; i < size; i++) {
+        if (atoi(array[i]) == 0 && array[i][0] != '0') {
+            check_err(7);
+        }
+    }
+    board.row = atoi(array[2]);
+    board.col = atoi(array[3]);
+    board.grid = malloc(sizeof(char *) * (board.col + 1));
+    for (int i = 0; i < board.col; i++) {
+        board.grid[i] = malloc(sizeof(char) * (board.row + 1));
+    }
+    for (int i = 0; i < MAX_INPUT; i++) {
+        free(array[i]);
+    }
+    free(array);
+    return board;
+}
+
+/**
 * Loads a game from a file.
 * filename: The name of the file to load from.
 * tileIndex: The index of the tile to be played.
 * playerTurn: The next player to be playing.
-* errorCode: Errors which may arise from the function.
 * Returns 1 if saved successfully, 0 otherwise
 */
-Board load(char *filename, int *tileIndex, int *playerTurn, int *errorCode) {
+Board load(char *filename, int *tileIndex, int *playerTurn) {
     FILE *file = fopen(filename, "r");
     Board board;
-    *errorCode = 0;
-    char character, **array;
-    int size, row = 0, col = 0, rowMax = 0, colMax = 0;
+    char character;
+    int row = 0, col = 0, rowMax = 0, colMax = 0;
     if (file) {
         int counter = 0, isFirstLine = 1;
         char *line = malloc(0);
@@ -755,30 +833,10 @@ Board load(char *filename, int *tileIndex, int *playerTurn, int *errorCode) {
                 line = realloc(line, sizeof(char) * (counter + 1));
                 line[counter] = character;
                 if (character == '\n') {
-                    line[counter] = '\0';
                     isFirstLine = 0;
-                    array = split_with_size(line, " ", &size);
-                    free(line);
-                    if (size != 4) {
-                        *errorCode = 7;
-                        break;
-                    }
-                    for (int i = 0; i < size; i++) {
-                        if (atoi(array[i]) == 0 && array[i][0] != '0') {
-                            *errorCode = 7;
-                            break;
-                        }
-                    }
-                    *tileIndex = atoi(array[0]);
-                    *playerTurn = atoi(array[1]);
-                    board.row = atoi(array[2]);
-                    board.col = atoi(array[3]);
-                    board.grid = malloc(sizeof(char *) * (board.col + 1));
-                    for (int i = 0; i < board.col; i++) {
-                        board.grid[i] = malloc(sizeof(char) * (board.row + 1));
-                    }
+                    board = get_first_line(counter, line);
                 }
-            } else { /* Check the args in the first line matchs the board. */
+            } else { /* Check the args if the first line matches the board. */
                 if (col == 0) {
                     rowMax++;
                 }
@@ -786,13 +844,11 @@ Board load(char *filename, int *tileIndex, int *playerTurn, int *errorCode) {
                     colMax++;
                 }
                 if (col == board.col || row == board.row + 1) {
-                    *errorCode = 7;
-                    break;
+                    check_err(7);
                 }
                 if (character != '.' && character != '#' && 
                         character != '*' && character != '\n') {
-                    *errorCode = 7;
-                    break;
+                    check_err(7);
                 }
                 board.grid[col][row] = character;
                 row++;
@@ -804,17 +860,12 @@ Board load(char *filename, int *tileIndex, int *playerTurn, int *errorCode) {
             counter++;
         }
         if ((rowMax - 1) != board.row || (colMax + 1) != board.col) {
-            *errorCode = 7;
+            check_err(7);
         }
         fclose(file);
     } else {
-        *errorCode = 6;
-        return board;
+        check_err(6);
     }
-    for (int i = 0; i < MAX_INPUT; i++) {
-        free(array[i]);
-    }
-    free(array);
     return board;
 }
 
